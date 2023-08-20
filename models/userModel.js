@@ -11,6 +11,14 @@ const userSchema = mongoose.Schema(
       type: String,
       Required: true,
     },
+    stories_bookmarked: [
+      {
+        storyId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Story",
+        },
+      },
+    ],
   },
   {
     timestamps: true,

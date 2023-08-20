@@ -7,22 +7,26 @@ const storySchema = mongoose.Schema(
       ref: "User",
       required: true,
     },
-    stories: [
-      {
-        heading: {
-          type: String,
-          required: true,
-        },
-        description: {
-          type: String,
-          required: true,
-        },
-        category: {
-          type: String,
-          required: true,
-        },
-      },
-    ],
+    heading: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    likes: {
+      type: Number,
+      default: 0,
+    },
+    images: {
+      type: [String],
+      required: true,
+    },
   },
   {
     timestamps: true,

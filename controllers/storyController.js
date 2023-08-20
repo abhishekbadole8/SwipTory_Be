@@ -7,34 +7,33 @@ const User = require("../models/userModel");
 // @access Private route
 const createStory = async (req, res) => {
   try {
-    const { userId, heading, description, category } = req.body;
+    const { userId, heading, description, category, images } = req.body;
 
     if (!mongoose.Types.ObjectId.isValid(userId)) {
       return res.status(404).json({ message: "User Id is Invalid" });
     }
 
-    if (!userId || !heading || !description || !category) {
+    if (!userId || !heading || !description || !category || !images) {
       return res.status(400).json({ message: "All field's are mandatory" });
+    } else if (images.length < 3) {
+      return res.status(400).json({ message: "Minimum 3 images are required" });
+    } else if (images.length > 6) {
+      return res.status(400).json({ message: "Maximum 6 images are required" });
     }
 
-    let user = await User.findById(userId); // Find User already exist or not
-
-    if (!user) {
-      return res
-        .status()
-        .json({ message: "User not found with the provided ID" });
-    }
-
-    let story = await Story.findOne({ userId }); // find story exist
+    const story = await Story.create({
+      userId,
+      heading,
+      description,
+      category,
+      images,
+    });
 
     if (!story) {
-      story = await Story.create({ userId, stories: [] });
+      res.status(404).json({ message: "Client error" });
     }
 
-    story.stories.push({ heading, description, category });
-    await story.save();
-
-    res.status(201).json(story.stories[story.stories.length - 1]);
+    res.status(201).json(story);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -57,11 +56,16 @@ const getStories = async (req, res) => {
 // @access Private route
 const getStory = async (req, res) => {
   try {
-    const { storyId } = req.params;
+    const { storyId } = req.params; // _id is StoryId
 
     if (!mongoose.Types.ObjectId.isValid(storyId)) {
       return res.status(404).json({ message: "Invalid storyId" });
     }
+    const story = Story.findById(storyId);
+    if (!story) {
+      return res.status(404).json({ message: "Story not found" });
+    }
+    res.status(200).json(story);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -72,18 +76,27 @@ const getStory = async (req, res) => {
 // @access Private route
 const updateStory = async (req, res) => {
   try {
-    const { storyId } = req.params;
+    const { userId, storyId } = req.params;
 
+    const { heading, description, category, bookmarks, likes } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(404).json("Invalid Story id");
+    }
     if (!mongoose.Types.ObjectId.isValid(storyId)) {
       return res.status(404).json("Invalid Story id");
     }
 
-    const story = await Story.findOne({ "stories._id":storyId });
+    const story = await Story.findById(storyId);
 
-    
-    res.json(story);
+    if (!story) {
+      return res.status(404).json("Story not found");
+    }
+
+    res.status(200).json(story); // Respond with the updated story
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = { createStory, getStories, getStory, updateStory };
