@@ -44,7 +44,16 @@ const createStory = async (req, res) => {
 // @access Public route
 const getStories = async (req, res) => {
   try {
-    const stories = await Story.find();
+    const { category } = req.query;
+
+    let query = {};
+
+    if (category) {
+      query = { category: category };
+    }
+
+    const stories = await Story.find(query);
+
     res.status(200).json(stories);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -77,23 +86,29 @@ const getStory = async (req, res) => {
 const updateStory = async (req, res) => {
   try {
     const { userId, storyId } = req.params;
+    const { heading, description, category, images, action } = req.body;
 
-    const { heading, description, category, bookmarks, likes } = req.body;
+    let story = await Story.findById(storyId);
 
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(404).json("Invalid Story id");
+    if (!story) return res.status(404).json("Story not found");
+
+    if (action === "updateInfo") {
+      story.heading = heading;
+      story.description = description;
+      story.category = category;
+    } else if (action === "updateLikes") {
+      const userLiked = story.likes.includes(userId);
+      if (userLiked) {
+        story.likes = story.likes.filter((id) => id !== userId);
+      } else {
+        story.likes.push(userId);
+      }
+    } else if (action === "updateImages") {
+      story.images = images;
     }
-    if (!mongoose.Types.ObjectId.isValid(storyId)) {
-      return res.status(404).json("Invalid Story id");
-    }
-
-    const story = await Story.findById(storyId);
-
-    if (!story) {
-      return res.status(404).json("Story not found");
-    }
-
-    res.status(200).json(story); // Respond with the updated story
+    
+    await story.save();
+    res.status(200).json({ message: "Story updated successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

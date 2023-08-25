@@ -20,8 +20,7 @@ const storySchema = mongoose.Schema(
       required: true,
     },
     likes: {
-      type: Number,
-      default: 0,
+      type: [String],
     },
     images: {
       type: [String],

@@ -10,8 +10,10 @@ const connectDb = require("./configs/dbConnection");
 
 connectDb();
 app.use(cors());
-app.use(bodyParse.json()); // Body
-app.use(bodyParse.urlencoded({ extended: true })); // Url data
+// app.use(bodyParse.json()); // Body
+// app.use(bodyParse.urlencoded({ extended: false })); // Url data
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/user", userRoutes);
 app.use("/api/story", storyRoutes);

@@ -18,7 +18,7 @@ const createUser = async (req, res) => {
     // User Valid check
     const isUserValid = await User.findOne({ username });
     if (isUserValid) {
-      return res.status(400).json({ message: "User Already present" });
+      return res.status(400).json({ message: "Username already taken" });
     }
 
     // hash Password
@@ -89,7 +89,7 @@ const updateUser = async (req, res) => {
       await user.save();
       res
         .status(200)
-        .json({ message: "User bookmark updated successfully", user });
+        .json({ message: "User bookmark updated successfully"});
     }
     
   } catch (error) {
