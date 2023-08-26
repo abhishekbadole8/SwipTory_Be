@@ -92,10 +92,19 @@ const updateStory = async (req, res) => {
 
     if (!story) return res.status(404).json("Story not found");
 
-    if (action === "updateInfo") {
-      story.heading = heading;
-      story.description = description;
-      story.category = category;
+    if (action === "updateInfoAndImage") {
+      if (heading) {
+        story.heading = heading;
+      }
+      if (description) {
+        story.description = description;
+      }
+      if (category) {
+        story.category = category;
+      }
+      if (images) {
+        story.images = images;
+      }
     } else if (action === "updateLikes") {
       const userLiked = story.likes.includes(userId);
       if (userLiked) {
@@ -103,12 +112,21 @@ const updateStory = async (req, res) => {
       } else {
         story.likes.push(userId);
       }
-    } else if (action === "updateImages") {
-      story.images = images;
+    } else if (action === "updateBookmarks") {
+      const userBookmarked = story.bookmarks.includes(userId);
+      if (userBookmarked) {
+        story.bookmarks = story.bookmarks.filter((id) => id !== userId);
+      } else {
+        story.bookmarks.push(userId);
+      }
     }
-    
+
     await story.save();
-    res.status(200).json({ message: "Story updated successfully" });
+    res.status(200).json({
+      message: "Story updated successfully",
+      updatedBookmarks: story.bookmarks,
+      updatedLikes: story.likes,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

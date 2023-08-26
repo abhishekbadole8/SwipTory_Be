@@ -9,6 +9,5 @@ const authHandler = require("../middlewares/authHandler");
 
 router.post("/register", createUser);
 router.post("/login", loginUser);
-router.patch("/add-bookmark", authHandler, updateUser); // Here User Added Bookmarks are saved
 
 module.exports = router;

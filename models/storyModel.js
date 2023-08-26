@@ -22,6 +22,9 @@ const storySchema = mongoose.Schema(
     likes: {
       type: [String],
     },
+    bookmarks: {
+      type: [String],
+    },
     images: {
       type: [String],
       required: true,
