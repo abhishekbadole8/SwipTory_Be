@@ -8,7 +8,7 @@ const {
 } = require("../controllers/storyController");
 const authHandler = require("../middlewares/authHandler");
 
-router.put("/add", authHandler, createStory); // Add Story
+router.post("/add", authHandler, createStory); // Add Story
 router.get("/", getStories); // Get Story's
 router.get("/:storyId", authHandler, getStory); // Get Story
 
