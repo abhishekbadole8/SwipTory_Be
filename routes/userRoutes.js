@@ -3,11 +3,12 @@ const router = express.Router();
 const {
   createUser,
   loginUser,
-  updateUser,
 } = require("../controllers/userController");
-const authHandler = require("../middlewares/authHandler");
 
+// Route to register a new user
 router.post("/register", createUser);
+
+// Route to log in an existing user
 router.post("/login", loginUser);
 
 module.exports = router;

@@ -1,26 +1,31 @@
 const { default: mongoose } = require("mongoose");
 const Story = require("../models/storyModel");
-const User = require("../models/userModel");
 
-// @desc Create Story
+// @desc Add Story
 // @route POST api/story/add
 // @access Private route
 const createStory = async (req, res) => {
   try {
     const { userId, heading, description, category, images } = req.body;
 
+    // Check if userId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(404).json({ message: "User Id is Invalid" });
+      return res.status(404).json({ error: "Invalid user ID format." });
     }
 
+    // Mandatory field check
     if (!userId || !heading || !description || !category || !images) {
-      return res.status(400).json({ message: "All field's are mandatory" });
-    } else if (images.length < 3) {
-      return res.status(400).json({ message: "Minimum 3 images are required" });
-    } else if (images.length > 6) {
-      return res.status(400).json({ message: "Maximum 6 images are required" });
+      return res.status(400).json({ message: "All field's are mandatory." });
     }
 
+    // Validate number of images
+    if (images.length < 3 || images.length > 6) {
+      return res
+        .status(400)
+        .json({ error: "Images should be between 3 and 6." });
+    }
+
+    // Create story
     const story = await Story.create({
       userId,
       heading,
@@ -29,13 +34,16 @@ const createStory = async (req, res) => {
       images,
     });
 
+    // Check if story creation failed
     if (!story) {
-      res.status(404).json({ message: "Client error" });
+      res.status(404).json({ error: "Failed to create story." });
     }
 
+    // Return the created story
     res.status(201).json(story);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error creating story:", error);
+    res.status(500).json({ error: "Internal server error." });
   }
 };
 
@@ -44,19 +52,20 @@ const createStory = async (req, res) => {
 // @access Public route
 const getStories = async (req, res) => {
   try {
+    // Extract category from query parameters
     const { category } = req.query;
 
-    let query = {};
+    // Construct the query based on the presence of category
+    const query = category ? { category } : {};
 
-    if (category) {
-      query = { category: category };
-    }
-
+    // Find stories based on the constructed query
     const stories = await Story.find(query);
 
+    // Return the found stories
     res.status(200).json(stories);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching stories:", error);
+    res.status(500).json({ error: "Failed to fetch stories." });
   }
 };
 
@@ -67,68 +76,93 @@ const getStory = async (req, res) => {
   try {
     const { storyId } = req.params; // _id is StoryId
 
+    // Check if the provided storyId is a valid MongoDB ObjectId
     if (!mongoose.Types.ObjectId.isValid(storyId)) {
-      return res.status(404).json({ message: "Invalid storyId" });
+      return res.status(400).json({ error: "Invalid story ID format." });
     }
-    const story = Story.findById(storyId);
+
+    // // Find the story by its ID
+    const story = await Story.findById(storyId);
+
+    // If no story is found with the given ID
     if (!story) {
-      return res.status(404).json({ message: "Story not found" });
+      return res.status(404).json({ error: "Story not found." });
     }
+    // If the story is found
     res.status(200).json(story);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching story:", error);
+    res.status(500).json({ error: "Failed to fetch story." });
   }
 };
 
 // @desc Patch Story
-// @route Patch api/story/edit/:storyId
+// @route Patch api/story/update/:storyId
 // @access Private route
 const updateStory = async (req, res) => {
   try {
     const { userId, storyId } = req.params;
     const { heading, description, category, images, action } = req.body;
 
+    // Check if the user is authorized to update the story
+    if (userId !== req.userId) {
+      return res
+        .status(403)
+        .json({ error: "Unauthorized access to update story." });
+    }
+
     let story = await Story.findById(storyId);
 
-    if (!story) return res.status(404).json("Story not found");
+    // Check if the story exists
+    if (!story) {
+      return res.status(404).json({ error: "Story not found." });
+    }
 
-    if (action === "updateInfoAndImage") {
-      if (heading) {
-        story.heading = heading;
-      }
-      if (description) {
-        story.description = description;
-      }
-      if (category) {
-        story.category = category;
-      }
-      if (images) {
-        story.images = images;
-      }
-    } else if (action === "updateLikes") {
-      const userLiked = story.likes.includes(userId);
-      if (userLiked) {
-        story.likes = story.likes.filter((id) => id !== userId);
-      } else {
-        story.likes.push(userId);
-      }
-    } else if (action === "updateBookmarks") {
-      const userBookmarked = story.bookmarks.includes(userId);
-      if (userBookmarked) {
-        story.bookmarks = story.bookmarks.filter((id) => id !== userId);
-      } else {
-        story.bookmarks.push(userId);
-      }
+    // Update story based on the provided action
+    switch (action) {
+      case "updateStoryDetails":
+        if (heading) {
+          story.heading = heading;
+        }
+        if (description) {
+          story.description = description;
+        }
+        if (category) {
+          story.category = category;
+        }
+        if (images) {
+          story.images = images;
+        }
+        break;
+      case "updateLikes":
+        const userLiked = story.likes.includes(userId);
+        if (userLiked) {
+          story.likes = story.likes.filter((id) => id !== userId);
+        } else {
+          story.likes.push(userId);
+        }
+        break;
+      case "updateBookmarks":
+        const userBookmarked = story.bookmarks.includes(userId);
+        if (userBookmarked) {
+          story.bookmarks = story.bookmarks.filter((id) => id !== userId);
+        } else {
+          story.bookmarks.push(userId);
+        }
+        break;
+      default:
+        return res.status(400).json({ error: "Invalid action." });
     }
 
     await story.save();
     res.status(200).json({
-      message: "Story updated successfully",
+      story,
       updatedBookmarks: story.bookmarks,
       updatedLikes: story.likes,
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error updating story:", error);
+    res.status(500).json({ error: "Failed to update story." });
   }
 };
 

@@ -1,5 +1,4 @@
 const User = require("../models/userModel");
-const { default: mongoose } = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -10,31 +9,29 @@ const createUser = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    // mandatory field check
+    // Mandatory field check
     if (!username || !password) {
-      return res.status(400).json({ message: "All Field's are Mandatory!" });
+      return res.status(400).json({ error: "All Field's are Mandatory!" });
     }
 
-    // User Valid check
-    const isUserValid = await User.findOne({ username });
-    if (isUserValid) {
-      return res.status(400).json({ message: "Username already taken" });
+    // Check if username already exists
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ error: "Username already taken" });
     }
 
-    // hash Password
+    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
-    const user = await User.create({
+    // Create new user
+    const newUser = await User.create({
       username,
       password: hashedPassword,
     });
 
-    if (user) {
-      res.status(201).json(user);
-    }
+    res.status(201).json(newUser);
   } catch (error) {
-    res.status(500).json(`Register User Failed: ${error}`);
+    res.status(500).json({ error: "Failed to register user." });
   }
 };
 
@@ -47,19 +44,21 @@ const loginUser = async (req, res) => {
 
     // Mandatory field check
     if (!username || !password) {
-      return res.status(400).json({ message: "All Field's are Mandatory!" });
+      return res.status(400).json({ error: "All fields are mandatory" });
     }
 
-    // User Valid then send token
+    // Find user by username
     const user = await User.findOne({ username });
-    if (user && (await bcrypt.compare(password, user.password))) {
-      const token = jwt.sign({ user }, process.env.SECRET, { expiresIn: "1d" });
-      res.status(200).json({ token: token });
-    } else {
-      res.status(401).json({ message: "Invalid Credentails Provided" });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ error: "Invalid credentials provided." });
     }
+
+    // Generate token
+    const token = jwt.sign({ user }, process.env.SECRET, { expiresIn: "1d" });
+
+    res.status(200).json({ authToken: token });
   } catch (error) {
-    res.status(500).json(`Login User Failed: ${error}`);
+    res.status(500).json({ error: "Failed to login user." });
   }
 };
 

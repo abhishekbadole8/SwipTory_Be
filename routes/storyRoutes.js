@@ -12,7 +12,7 @@ router.post("/add", authHandler, createStory); // Add Story
 router.get("/", getStories); // Get Story's
 router.get("/:storyId", authHandler, getStory); // Get Story
 
-router.patch("/edit/:userId/:storyId", authHandler, updateStory); // edit Story
+router.patch("/update/:userId/:storyId", authHandler, updateStory); // edit Story
 router.delete("/delete/:storyId", authHandler); // delete story
 
 module.exports = router;
